@@ -65,7 +65,36 @@ def load_level_layout(level_num):
     # This avoids hardcoding every single wall piece
     trench_center = 400
     trench_width = 300 if level_num == 1 else 180  # Level 2 is significantly narrower
-    
+    # Generate segments down the screen
+    for i in range(0, 20):
+        y_pos = i * 40
+        # Slowly drift the center of the trench left or right
+        trench_center += random.randint(-25, 25)
+        
+        # Left wall segment
+        left_wall_width = trench_center - (trench_width // 2)
+        walls.append(pygame.Rect(0, y_pos, left_wall_width, 35))
+        
+        # Right wall segment
+        right_wall_x = trench_center + (trench_width // 2)
+        walls.append(pygame.Rect(right_wall_x, y_pos, WIDTH - right_wall_x, 35))
+
+        # Randomly place items inside the safe trench zones
+        if i % 4 == 2:
+            air_canisters.append(pygame.Rect(trench_center + random.randint(-40, 40), y_pos, 15, 20))
+        if i == 10:
+            sonar_pickups.append(pygame.Rect(trench_center, y_pos, 20, 20))
+
+  def draw_text(text, font_size, x, y, color):
+    """
+    Handles font assembly, surface allocation, and blitting 
+    operations to clean up repetitive interface text rendering tasks.
+    """
+    font = pygame.font.SysFont("Helvetica", font_size, bold=True)
+    text_surface = font.render(text, True, color)
+    screen.blit(text_surface, (x, y))
+          
+
 
 
 
