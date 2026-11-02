@@ -85,7 +85,7 @@ def load_level_layout(level_num):
         if i == 10:
             sonar_pickups.append(pygame.Rect(trench_center, y_pos, 20, 20))
 
-  def draw_text(text, font_size, x, y, color):
+def draw_text(text, font_size, x, y, color):
     """
     Handles font assembly, surface allocation, and blitting 
     operations to clean up repetitive interface text rendering tasks.
@@ -93,7 +93,72 @@ def load_level_layout(level_num):
     font = pygame.font.SysFont("Helvetica", font_size, bold=True)
     text_surface = font.render(text, True, color)
     screen.blit(text_surface, (x, y))
-          
+    
+    
+def handle_scrolling_and_movement():
+    """
+    Manages background matrix shifting to simulate continuous 
+    submarine diving depth, while bounding player movement.
+    """
+    global depth, player_y
+    
+    # Automatically move objects upward to simulate submarine falling/diving down
+    scroll_speed = 3 if current_level == 1 else 4
+    depth += scroll_speed // 2
+    
+    for wall in walls:
+        wall.y -= scroll_speed
+        # Loop walls back to bottom once they scroll past top boundary
+        if wall.y < -40:
+            wall.y = HEIGHT + random.randint(0, 20)
+
+    for air in air_canisters:
+        air.y -= scroll_speed
+        if air.y < -40:
+            air.y = HEIGHT + random.randint(10, 100)
+
+    for sonar in sonar_pickups:
+        sonar.y -= scroll_speed
+        if sonar.y < -40:
+            sonar.y = HEIGHT + random.randint(200, 400)
+
+def manage_powerups():
+    """
+ Tracks and the power ups and the different levels
+    """   
+    global is_sonar_active  visibility_radius
+    if is_sonar_active:
+        if time.time() > sonar_timer:
+            is_sonar_active = False
+            visibility_radius = 120  # Drop back down to a dark window
+
+def check_collisions(player_rect):
+    """
+    Evaluates cross-intersections between the submarine and active lists. 
+    Triggers state changes or updates tracking metrics based on contact rules.
+    """
+    global oxygen, game_state, is_sonar_active, sonar_timer, visibility_radius
+
+    # 1. Check Glacier Wall Collision (Immediate Damage/Failure)
+    for wall in walls:
+        if player_rect.colliderect(wall):
+            game_state = "GAME_OVER"
+
+    # 2. Check Oxygen Canister Collection
+    for air in air_canisters:
+        if player_rect.colliderect(air):
+            oxygen = min(100.0, oxygen + 25.0)  # Caps at 100% capacity maximum boundary
+            air_canisters.remove(air)
+
+    # 3. Check Sonar Pickups (Power-up Modifier)
+    for sonar in sonar_pickups:
+        if player_rect.colliderect(sonar):
+            is_sonar_active = True
+            sonar_timer = time.time() + 6.0  # Power-up behavior changes game for 6 seconds
+            visibility_radius = 800         # Illuminates the entire trench area
+            sonar_pickups.remove(sonar)  
+
+
 
 
 
