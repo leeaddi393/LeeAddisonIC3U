@@ -97,7 +97,7 @@ def draw_text(text, font_size, x, y, color):
     
 def handle_scrolling_and_movement():
     """
-    Manages background matrix shifting to simulate continuous 
+    Manages background shifting to simulate continuous 
     submarine diving depth, while bounding player movement.
     """
     global depth, player_y
@@ -124,9 +124,9 @@ def handle_scrolling_and_movement():
 
 def manage_powerups():
     """
- Tracks and the power ups and the different levels
+    Tracks and the power ups and the different levels
     """   
-    global is_sonar_active  visibility_radius
+    global is_sonar_active, visibility_radius
     if is_sonar_active:
         if time.time() > sonar_timer:
             is_sonar_active = False
@@ -135,7 +135,7 @@ def manage_powerups():
 def check_collisions(player_rect):
     """
     Evaluates cross-intersections between the submarine and active lists. 
-    Triggers state changes or updates tracking metrics based on contact rules.
+    
     """
     global oxygen, game_state, is_sonar_active, sonar_timer, visibility_radius
 
@@ -156,7 +156,37 @@ def check_collisions(player_rect):
             is_sonar_active = True
             sonar_timer = time.time() + 6.0  # Power-up behavior changes game for 6 seconds
             visibility_radius = 800         # Illuminates the entire trench area
-            sonar_pickups.remove(sonar)  
+            sonar_pickups.remove(sonar)
+
+# ==========================================
+# 4. MAIN PROGRAM GAME LOOP
+# ==========================================
+load_level_layout(1)
+
+running = True
+while running:
+ if event.type == pygame.KEYDOWN:
+            if game_state == "MENU" and event.key == pygame.K_SPACE:
+                game_state = "LEVEL_1"
+                oxygen = 100.0
+                depth = 0
+                load_level_layout(1)
+            elif (game_state == "GAME_OVER" or game_state == "VICTORY") and event.key == pygame.K_r:
+                game_state = "MENU"
+
+    # Continuous Key Input Parsing for Active Movement
+    if game_state == "LEVEL_1" or game_state == "LEVEL_2":
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_LEFT] and player_x > 0:
+            player_x -= player_speed
+        if keys[pygame.K_RIGHT] and player_x < WIDTH - player_width:
+            player_x += player_speed
+        if keys[pygame.K_UP] and player_y > 0:
+            player_y -= player_speed
+        if keys[pygame.K_DOWN] and player_y < HEIGHT - player_height:
+            player_y += player_speed
+
+       
 
 
 
