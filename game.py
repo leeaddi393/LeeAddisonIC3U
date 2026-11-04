@@ -1,3 +1,5 @@
+from sched import Event
+
 import pygame
 import random
 import time
@@ -165,7 +167,12 @@ load_level_layout(1)
 
 running = True
 while running:
- if event.type == pygame.KEYDOWN:
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+ 
+if event.type == pygame.KEYDOWN:
             if game_state == "MENU" and event.key == pygame.K_SPACE:
                 game_state = "LEVEL_1"
                 oxygen = 100.0
@@ -175,7 +182,7 @@ while running:
                 game_state = "MENU"
 
     # Continuous Key Input Parsing for Active Movement
-    if game_state == "LEVEL_1" or game_state == "LEVEL_2":
+if game_state == "LEVEL_1" or game_state == "LEVEL_2":
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT] and player_x > 0:
             player_x -= player_speed
@@ -186,15 +193,46 @@ while running:
         if keys[pygame.K_DOWN] and player_y < HEIGHT - player_height:
             player_y += player_speed
 
-       
+ # Drain oxygen resource progressively per frame loop
+        oxygen -= 0.08
+        if oxygen <= 0:
+            game_state = "GAME_OVER"
+
+        # Track depth limit milestones to switch between level spaces
+        if current_level == 1 and depth >= 1000:
+            game_state = "LEVEL_2"
+            load_level_layout(2)  # Swaps entire structural wall layout matrix dynamically
+        elif current_level == 2 and depth >= 2500:
+            game_state = "VICTORY"
+
+        # Apply continuous simulation loop steps
+        handle_scrolling_and_movement()
+        manage_powerups()
+        
+        # Build tracking rect for collision check call
+        sub_rect = pygame.Rect(player_x, player_y, player_width, player_height)
+        check_collisions(sub_rect)   # Drain oxygen resource progressively per frame loop
+        oxygen -= 0.08
+        if oxygen <= 0:
+                game_state = "GAME_OVER"
+        
+                # Track depth limit milestones to switch between level spaces
+        if current_level == 1 and depth >= 1000:
+                game_state = "LEVEL_2"
+                load_level_layout(2)  # Swaps entire structural wall layout matrix dynamically
+        elif current_level == 2 and depth >= 2500:
+                game_state = "VICTORY"
+        
+                # Apply continuous simulation loop steps
+                handle_scrolling_and_movement()
+                manage_powerups()
+                
+                # Build tracking rect for collision check call
+                sub_rect = pygame.Rect(player_x, player_y, player_width, player_height)
+                check_collisions(sub_rect)     
 
 
-
-
-
-
-
-screen.fill(BLUE)
+screen.fill(DEEP_OCEAN)
 
 
 
