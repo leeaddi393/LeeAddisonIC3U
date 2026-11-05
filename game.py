@@ -20,8 +20,11 @@ YELLOW = (255, 255, 150)
 WHITE = (255, 255, 255)
 BLUE = (0, 0, 200)
 BLACK = (0, 0, 0)
-DEEP_OCEAN = (10, 25, 50)
+DEEP_OCEAN = (18, 57, 122)
 OXYGEN_GREEN = (0, 255, 100)
+GLACIER_BLUE = (105, 196, 219)
+SONAR_GOLD = (176, 151, 60)
+RED = (176, 36, 26)
 
 # ==========================================
 # 2. GLOBAL GAME STATE VARIABLES
@@ -63,8 +66,8 @@ def load_level_layout(level_num):
     sonar_pickups.clear()
     current_level = level_num
 
-    # Creative Logic: Dynamically generate an unpredictable vertical cavern trench
-    # This avoids hardcoding every single wall piece
+    
+    # This avoids coding every single wall piece
     trench_center = 400
     trench_width = 300 if level_num == 1 else 180  # Level 2 is significantly narrower
     # Generate segments down the screen
@@ -104,7 +107,7 @@ def handle_scrolling_and_movement():
     """
     global depth, player_y
     
-    # Automatically move objects upward to simulate submarine falling/diving down
+    # Automatically moves objects up to show submarine falling/diving down
     scroll_speed = 3 if current_level == 1 else 4
     depth += scroll_speed // 2
     
@@ -149,7 +152,7 @@ def check_collisions(player_rect):
     # 2. Check Oxygen Canister Collection
     for air in air_canisters:
         if player_rect.colliderect(air):
-            oxygen = min(100.0, oxygen + 25.0)  # Caps at 100% capacity maximum boundary
+            oxygen = min(100.0, oxygen + 25.0)  # Ends at 100% capacity maximum boundary
             air_canisters.remove(air)
 
     # 3. Check Sonar Pickups (Power-up Modifier)
@@ -157,7 +160,7 @@ def check_collisions(player_rect):
         if player_rect.colliderect(sonar):
             is_sonar_active = True
             sonar_timer = time.time() + 6.0  # Power-up behavior changes game for 6 seconds
-            visibility_radius = 800         # Illuminates the entire trench area
+            visibility_radius = 800         # lights the entire trench area
             sonar_pickups.remove(sonar)
 
 # ==========================================
@@ -172,67 +175,85 @@ while running:
         if event.type == pygame.QUIT:
             running = False
  
-if event.type == pygame.KEYDOWN:
-            if game_state == "MENU" and event.key == pygame.K_SPACE:
-                game_state = "LEVEL_1"
-                oxygen = 100.0
-                depth = 0
-                load_level_layout(1)
-            elif (game_state == "GAME_OVER" or game_state == "VICTORY") and event.key == pygame.K_r:
-                game_state = "MENU"
+    if event.type == pygame.KEYDOWN:
+                if game_state == "MENU" and event.key == pygame.K_SPACE:
+                    game_state = "LEVEL_1"
+                    oxygen = 100.0
+                    depth = 0
+                    load_level_layout(1)
+                elif (game_state == "GAME_OVER" or game_state == "VICTORY") and event.key == pygame.K_r:
+                    game_state = "MENU"
 
-    # Continuous Key Input Parsing for Active Movement
-if game_state == "LEVEL_1" or game_state == "LEVEL_2":
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT] and player_x > 0:
-            player_x -= player_speed
-        if keys[pygame.K_RIGHT] and player_x < WIDTH - player_width:
-            player_x += player_speed
-        if keys[pygame.K_UP] and player_y > 0:
-            player_y -= player_speed
-        if keys[pygame.K_DOWN] and player_y < HEIGHT - player_height:
-            player_y += player_speed
+        # Continuous Key Input for Active Movement
+    if game_state == "LEVEL_1" or game_state == "LEVEL_2":
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_LEFT] and player_x > 0:
+                player_x -= player_speed
+            if keys[pygame.K_RIGHT] and player_x < WIDTH - player_width:
+                player_x += player_speed
+            if keys[pygame.K_UP] and player_y > 0:
+                player_y -= player_speed
+            if keys[pygame.K_DOWN] and player_y < HEIGHT - player_height:
+                player_y += player_speed
 
- # Drain oxygen resource progressively per frame loop
-        oxygen -= 0.08
-        if oxygen <= 0:
-            game_state = "GAME_OVER"
-
-        # Track depth limit milestones to switch between level spaces
-        if current_level == 1 and depth >= 1000:
-            game_state = "LEVEL_2"
-            load_level_layout(2)  # Swaps entire structural wall layout matrix dynamically
-        elif current_level == 2 and depth >= 2500:
-            game_state = "VICTORY"
-
-        # Apply continuous simulation loop steps
-        handle_scrolling_and_movement()
-        manage_powerups()
-        
-        # Build tracking rect for collision check call
-        sub_rect = pygame.Rect(player_x, player_y, player_width, player_height)
-        check_collisions(sub_rect)   # Drain oxygen resource progressively per frame loop
-        oxygen -= 0.08
-        if oxygen <= 0:
+    # Drains oxygen resource progressively per frame loop
+            oxygen -= 0.08
+            if oxygen <= 0:
                 game_state = "GAME_OVER"
-        
-                # Track depth limit milestones to switch between level spaces
-        if current_level == 1 and depth >= 1000:
+
+            # Tracks depth limit checkpoints to switch between level spaces
+            if current_level == 1 and depth >= 1000:
                 game_state = "LEVEL_2"
                 load_level_layout(2)  # Swaps entire structural wall layout matrix dynamically
-        elif current_level == 2 and depth >= 2500:
+            elif current_level == 2 and depth >= 2500:
                 game_state = "VICTORY"
-        
-                # Apply continuous simulation loop steps
-                handle_scrolling_and_movement()
-                manage_powerups()
-                
-                # Build tracking rect for collision check call
-                sub_rect = pygame.Rect(player_x, player_y, player_width, player_height)
-                check_collisions(sub_rect)     
 
+            # Applys continuous simulation loop steps
+            handle_scrolling_and_movement()
+            manage_powerups()
+            
+            # Builds the tracking rect for collision check call
+            sub_rect = pygame.Rect(player_x, player_y, player_width, player_height)
+            check_collisions(sub_rect)   # Drain oxygen resource progressively per frame loop
+            oxygen -= 0.08
+            if oxygen <= 0:
+                    game_state = "GAME_OVER"
+            
 
-screen.fill(DEEP_OCEAN)
+    # ==========================================
+    # 5. DRAWING & RENDERING (Polish Architecture)
+    # ==========================================
+    screen.fill(DEEP_OCEAN)
+    if game_state == "MENU":
+            draw_text("SUB-ZERO SUBMARINE", 50, 140, 200, GLACIER_BLUE)
+            draw_text("Press SPACEBAR to Begin Mission", 24, 230, 320, WHITE)
+            draw_text("Controls: Arrow Keys | Avoid walls, collect green oxygen cores.", 18, 170, 450, WHITE)
+
+    elif game_state == "LEVEL_1" or game_state == "LEVEL_2":
+            # Create surfaces for the objects
+            for wall in walls:
+                pygame.draw.rect(screen, GLACIER_BLUE, wall)
+            for air in air_canisters:
+                pygame.draw.rect(screen, OXYGEN_GREEN, air)
+            for sonar in sonar_pickups:
+                pygame.draw.rect(screen, SONAR_GOLD, sonar)
+                # Draw Player Submarine
+            
+            pygame.draw.rect(screen, RED, (player_x, player_y, player_width, player_height))
+
+            # LEVEL 4 POLISH: The "Midnight Zone" Visibility Mask
+            # Draws a black overlay with a transparent hole tracking the submarine
+            if not is_sonar_active:
+                mask = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+                mask.fill((0, 0, 0, 240))  # Semi-opaque darkness overlay
+                # Cut a clear visibility circular aperture where the player sits
+                pygame.draw.circle(mask, (0, 0, 0, 0), (player_x + (player_width//2), player_y + (player_height//2)), visibility_radius)
+                screen.blit(mask, (0, 0))
+
+                # update the display
+                pygame.display.flip()
+
+            
 
 
 
