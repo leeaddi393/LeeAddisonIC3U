@@ -37,7 +37,7 @@ oxygen = 100.0       # Ticks down over time
 # Player properties
 player_x = 380
 player_y = 150
-player_speed = 5
+player_speed = 2
 player_width = 40
 player_height = 25
 
@@ -135,7 +135,7 @@ def manage_powerups():
     if is_sonar_active:
         if time.time() > sonar_timer:
             is_sonar_active = False
-            visibility_radius = 120  # Drop back down to a dark window
+            visibility_radius = 20  # Drop back down to a dark window
 
 def check_collisions(player_rect):
     """
@@ -175,15 +175,24 @@ while running:
         if event.type == pygame.QUIT:
             running = False
  
-    if event.type == pygame.KEYDOWN:
-                if game_state == "MENU" and event.key == pygame.K_SPACE:
-                    game_state = "LEVEL_1"
-                    oxygen = 100.0
-                    depth = 0
-                    load_level_layout(1)
-                elif (game_state == "GAME_OVER" or game_state == "VICTORY") and event.key == pygame.K_r:
-                    game_state = "MENU"
-
+       
+        elif event.type == pygame.KEYDOWN:
+            
+            # If spacebar is pressed running = true
+            if event.key == pygame.K_SPACE and not running:
+                running = True
+            
+            # Handle menu to level transition
+            if game_state == "MENU" and event.key == pygame.K_SPACE:
+                game_state = "LEVEL_1"
+                oxygen = 100.0
+                depth = 0
+                load_level_layout(1)
+                
+            # Handle restart from Game Over or Victory screens
+            elif (game_state == "GAME_OVER" or game_state == "VICTORY") and event.key == pygame.K_r:
+                game_state = "MENU"
+      
         # Continuous Key Input for Active Movement
     if game_state == "LEVEL_1" or game_state == "LEVEL_2":
             keys = pygame.key.get_pressed()
@@ -244,14 +253,17 @@ while running:
             # LEVEL 4 POLISH: The "Midnight Zone" Visibility Mask
             # Draws a black overlay with a transparent hole tracking the submarine
             if not is_sonar_active:
+                #https://www.pygame.org/docs/ref/mask.html
                 mask = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-                mask.fill((0, 0, 0, 240))  # Semi-opaque darkness overlay
+                mask.fill((255, 226, 148))  # Semi-opaque darkness overlay
                 # Cut a clear visibility circular aperture where the player sits
                 pygame.draw.circle(mask, (0, 0, 0, 0), (player_x + (player_width//2), player_y + (player_height//2)), visibility_radius)
                 screen.blit(mask, (0, 0))
 
+            
+
                 # update the display
-                pygame.display.flip()
+    pygame.display.flip()
 
             
 
