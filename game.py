@@ -250,19 +250,24 @@ while running:
             
             pygame.draw.rect(screen, RED, (player_x, player_y, player_width, player_height))
 
-            # LEVEL 4 POLISH: The "Midnight Zone" Visibility Mask
-            # Draws a black overlay with a transparent hole tracking the submarine
-            if not is_sonar_active:
-                #https://www.pygame.org/docs/ref/mask.html
-                mask = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-                mask.fill((255, 226, 148))  # Semi-opaque darkness overlay
-                # Cut a clear visibility circular aperture where the player sits
-                pygame.draw.circle(mask, (0, 0, 0, 0), (player_x + (player_width//2), player_y + (player_height//2)), visibility_radius)
-                screen.blit(mask, (0, 0))
 
-            
+            pygame.draw.rect(screen, BLACK, (0, 0, WIDTH, 50))
+            draw_text(f"SECTOR: {current_level}", 18, 20, 15, GLACIER_BLUE)
+            draw_text(f"DEPTH: {depth}m", 18, 180, 15, WHITE)
+            draw_text(f"OXYGEN: {int(oxygen)}%", 18, 380, 15, OXYGEN_GREEN if oxygen > 30 else RED)
+        
+    if is_sonar_active:
+            draw_text("SONAR OVERDRIVE ACTIVE", 16, 560, 15, SONAR_GOLD)
 
-                # update the display
+    elif game_state == "GAME_OVER":
+            draw_text("SYSTEMS FAILURE", 46, 110, 200, RED)
+            draw_text(f"Your sub was lost at deep depth: {depth} meters.", 20, 210, 300, WHITE)
+            draw_text("Press 'R' Key to Return to Base Menu", 18, 240, 400, WHITE)
+
+    # manages time and frames per second
+    clock.tick(60)
+
+    # update the display
     pygame.display.flip()
 
             
