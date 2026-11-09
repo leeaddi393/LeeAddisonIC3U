@@ -45,6 +45,7 @@ player_height = 25
 is_sonar_active = False
 sonar_timer = 0.0
 visibility_radius = 12
+level_num = 1
 
 # Dynamic Object Lists
 walls = []
@@ -64,18 +65,20 @@ def load_level_layout(level_num):
     walls.clear()
     air_canisters.clear()
     sonar_pickups.clear()
-    current_level = level_num
+    current_level = level_num # current_level = 1
 
     
     # This avoids coding every single wall piece
-    trench_center = 400
+    trench_center = 388
     trench_width = 300 if level_num == 1 else 180  # Level 2 is significantly narrower
+    half_width = 200
     # Generate segments down the screen
     for i in range(0, 20):
         y_pos = i * 40
         # Slowly drift the center of the trench left or right
-        trench_center += random.randint(-25, 25)
-        
+       
+         # Keep the trench centered enough so it doesn't drift completely off-screen
+        trench_center = max(half_width + 50, min(WIDTH - half_width - 50, trench_center)) 
         # Left wall segment
         left_wall_width = trench_center - (trench_width // 2)
         walls.append(pygame.Rect(0, y_pos, left_wall_width, 35))
@@ -84,11 +87,14 @@ def load_level_layout(level_num):
         right_wall_x = trench_center + (trench_width // 2)
         walls.append(pygame.Rect(right_wall_x, y_pos, WIDTH - right_wall_x, 35))
 
-        # Randomly place items inside the safe trench zones
-        if i % 4 == 2:
-            air_canisters.append(pygame.Rect(trench_center + random.randint(-40, 40), y_pos, 15, 20))
+        if random.random() < 0.40:  # 40% chance to spawn a canister 
+            spawn_range = half_width - 20
+            air_x = trench_center + random.randint(-spawn_range, spawn_range - 15)
+            air_canisters.append(pygame.Rect(air_x, y_pos, 15, 20))
+            
+        # Place sonar pickup perfectly centered in the middle of the track length
         if i == 10:
-            sonar_pickups.append(pygame.Rect(trench_center, y_pos, 20, 20))
+            sonar_pickups.append(pygame.Rect(trench_center - 10, y_pos, 20, 20))
 
 def draw_text(text, font_size, x, y, color):
     """
@@ -136,6 +142,10 @@ def manage_powerups():
         if time.time() > sonar_timer:
             is_sonar_active = False
             visibility_radius = 20  # Drop back down to a dark window
+
+    if depth == 700: 
+        level_num =+ 1 
+             
 
 def check_collisions(player_rect):
     """
@@ -250,22 +260,23 @@ while running:
             
             pygame.draw.rect(screen, RED, (player_x, player_y, player_width, player_height))
 
-
             pygame.draw.rect(screen, BLACK, (0, 0, WIDTH, 50))
-            draw_text(f"SECTOR: {current_level}", 18, 20, 15, GLACIER_BLUE)
+            draw_text(f"level: {level_num}", 18, 20, 15, GLACIER_BLUE)
             draw_text(f"DEPTH: {depth}m", 18, 180, 15, WHITE)
             draw_text(f"OXYGEN: {int(oxygen)}%", 18, 380, 15, OXYGEN_GREEN if oxygen > 30 else RED)
         
     if is_sonar_active:
             draw_text("SONAR OVERDRIVE ACTIVE", 16, 560, 15, SONAR_GOLD)
-
     elif game_state == "GAME_OVER":
             draw_text("SYSTEMS FAILURE", 46, 110, 200, RED)
             draw_text(f"Your sub was lost at deep depth: {depth} meters.", 20, 210, 300, WHITE)
             draw_text("Press 'R' Key to Return to Base Menu", 18, 240, 400, WHITE)
+    
+    elif game_state == "VICTORY":
+        draw_text("TRENCH EXPLORATION COMPLETE", 44, 70, 200, OXYGEN_GREEN)
 
     # manages time and frames per second
-    clock.tick(60)
+    clock.tick(75)
 
     # update the display
     pygame.display.flip()
