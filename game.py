@@ -1,4 +1,3 @@
-from sched import Event
 
 import pygame
 import random
@@ -46,11 +45,16 @@ is_sonar_active = False
 sonar_timer = 0.0
 visibility_radius = 12
 level_num = 1
+trench_center = 400
 
 # Dynamic Object Lists
 walls = []
 air_canisters = []
 sonar_pickups = []
+
+# For track expansion logic
+highest_generated_y = 0
+lowest_generated_y = 0
 
 # ==========================================
 # 3. GAME LOGIC FUNCTIONS
@@ -68,33 +72,61 @@ def load_level_layout(level_num):
     current_level = level_num # current_level = 1
 
     
-    # This avoids coding every single wall piece
-    trench_center = 388
-    trench_width = 300 if level_num == 1 else 180  # Level 2 is significantly narrower
-    half_width = 200
-    # Generate segments down the screen
-    for i in range(0, 20):
-        y_pos = i * 40
+    trench_center = 400
+    trench_width = 300 if level_num == 1 else 180
+    half_width = trench_width // 2
+    
+    # Track the current vertical drawing position manually to handle variable wall heights
+    y_pos = 0
+    highest_generated_y = 0
+    segment_index = 0
+    
+    # Loop until we have generated walls down past the screen height
+    segment_index = 0
+    while y_pos < 800:
+        # Randomize the height of this specific wall segment (between 20 and 65 pixels)
+        # This makes the walls look jagged, uneven
+        wall_height = random.randint(20, 65)
+        
         # Slowly drift the center of the trench left or right
-       
-         # Keep the trench centered enough so it doesn't drift completely off-screen
-        trench_center = max(half_width + 50, min(WIDTH - half_width - 50, trench_center)) 
+        trench_center += random.randint(-25, 25)
+        
+        # Keep the trench centered enough so it doesn't drift completely off-screen
+        trench_center = max(half_width + 50, min(WIDTH - half_width - 50, trench_center))
+        
         # Left wall segment
-        left_wall_width = trench_center - (trench_width // 2)
-        walls.append(pygame.Rect(0, y_pos, left_wall_width, 35))
+        left_wall_width = trench_center - half_width
+        walls.append(pygame.Rect(0, y_pos, left_wall_width, wall_height))
         
         # Right wall segment
-        right_wall_x = trench_center + (trench_width // 2)
-        walls.append(pygame.Rect(right_wall_x, y_pos, WIDTH - right_wall_x, 35))
+        right_wall_x = trench_center + half_width
+        walls.append(pygame.Rect(right_wall_x, y_pos, WIDTH - right_wall_x, wall_height))
+        
+        # Oxygen canisters spawn all the way down, locked to the exact center line of the trench
+        if random.random() < 0.40:  # 40% chance to spawn a canister
+            # Centers the 15px wide canister on the trench center line
+            air_x = trench_center - 7 
+            # Centers the canister vertically inside this specific segment's unique height
+            air_y = y_pos + (wall_height // 2) - 10
+            air_canisters.append(pygame.Rect(air_x, air_y, 15, 20))
 
-        if random.random() < 0.40:  # 40% chance to spawn a canister 
-            spawn_range = half_width - 20
-            air_x = trench_center + random.randint(-spawn_range, spawn_range - 15)
-            air_canisters.append(pygame.Rect(air_x, y_pos, 15, 20))
+        if random.random() < 0.40:  # 40% chance to spawn a canister on any vertical spot
+            # Centers the  canister exactly on the trench center line
+            air_x = trench_center - 7 
+            # Centers the canister vertically inside this specific segment's unique height
+            air_y = y_pos + (wall_height // 2) - 10
+            air_canisters.append(pygame.Rect(air_x, air_y, 15, 20))
             
-        # Place sonar pickup perfectly centered in the middle of the track length
-        if i == 10:
-            sonar_pickups.append(pygame.Rect(trench_center - 10, y_pos, 20, 20))
+            
+        # Place sonar pickup perfectly centered roughly halfway down the map
+        if segment_index == 10:
+            sonar_y = y_pos + (wall_height // 2) - 10
+            sonar_pickups.append(pygame.Rect(trench_center - 10, sonar_y, 20, 20))
+            
+        # Move y_pos forward by the unique height of this segment so the next blocks stack perfectly
+        y_pos += wall_height
+        segment_index += 1
+        lowest_generated_y = y_pos
 
 def draw_text(text, font_size, x, y, color):
     """
@@ -104,6 +136,38 @@ def draw_text(text, font_size, x, y, color):
     font = pygame.font.SysFont("Helvetica", font_size, bold=True)
     text_surface = font.render(text, True, color)
     screen.blit(text_surface, (x, y))
+
+ def extend_level_layout():
+    """
+     Generates new trench segments below the screen as old ones scroll up,
+    making sure there is an infinite, path
+    """
+    global walls, air_canisters, sonar_pickups, trench_center, lowest_generated_y
+    
+    trench_width = 300 if current_level == 1 else 180
+    half_width = trench_width // 2
+    
+    while lowest_generated_y < HEIGHT + 100:
+        wall_height = random.randint(30, 65)
+        trench_center += random.randint(-25, 25)
+        trench_center = max(half_width + 50, min(WIDTH - half_width - 50, trench_center))
+        
+        walls.append(pygame.Rect(0, lowest_generated_y, trench_center - half_width, wall_height))
+        right_wall_x = trench_center + half_width
+        walls.append(pygame.Rect(right_wall_x, lowest_generated_y, WIDTH - right_wall_x, wall_height))
+        
+        # Continuously generate oxygen all the way down
+        if random.random() < 0.20:
+            air_x = trench_center - 7
+            air_y = lowest_generated_y + (wall_height // 2) - 10
+            air_canisters.append(pygame.Rect(air_x, air_y, 15, 20))
+            
+        # Occasional extra sonar pickups can appear as depth increases
+        if random.random() < 0.03 and len(sonar_pickups) == 0:
+            sonar_y = lowest_generated_y + (wall_height // 2) - 10
+            sonar_pickups.append(pygame.Rect(trench_center - 10, sonar_y, 20, 20))
+            
+        lowest_generated_y += wall_height   
     
     
 def handle_scrolling_and_movement():
@@ -111,11 +175,11 @@ def handle_scrolling_and_movement():
     Manages background shifting to simulate continuous 
     submarine diving depth, while bounding player movement.
     """
-    global depth, player_y
+    global depth,  lowest_generated_y
     
     # Automatically moves objects up to show submarine falling/diving down
     scroll_speed = 3 if current_level == 1 else 4
-    depth += scroll_speed // 2
+    depth += 1 
     
     for wall in walls:
         wall.y -= scroll_speed
@@ -159,6 +223,7 @@ def check_collisions(player_rect):
         if player_rect.colliderect(wall):
             game_state = "GAME_OVER"
 
+
     # 2. Check Oxygen Canister Collection
     for air in air_canisters:
         if player_rect.colliderect(air):
@@ -169,9 +234,11 @@ def check_collisions(player_rect):
     for sonar in sonar_pickups:
         if player_rect.colliderect(sonar):
             is_sonar_active = True
-            sonar_timer = time.time() + 6.0  # Power-up behavior changes game for 6 seconds
+            sonar_timer = time.time() + 6.0  # Power-up  changes game for 6 seconds
             visibility_radius = 800         # lights the entire trench area
             sonar_pickups.remove(sonar)
+
+        load_level_layout(current_level)
 
 # ==========================================
 # 4. MAIN PROGRAM GAME LOOP
